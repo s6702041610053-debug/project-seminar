@@ -40,22 +40,18 @@ const AdminDashboard: React.FC = () => {
   const completedProjects = projects.filter(p => p.status === 'completed').length;
   const highRiskCount = 2; // Mock value
   
-  const statusData = {
-    labels: ['กำลังดำเนินการ', 'เสร็จสิ้น', 'ล่าช้า', 'พักโครงการ'],
-    datasets: [{
-      data: [activeProjects, completedProjects, 2, 1],
-      backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
-    }]
-  };
+  const statusData = [
+    { name: 'กำลังดำเนินการ', value: activeProjects, color: '#3b82f6' },
+    { name: 'เสร็จสิ้น', value: completedProjects, color: '#10b981' },
+    { name: 'ล่าช้า', value: 2, color: '#f59e0b' },
+    { name: 'พักโครงการ', value: 1, color: '#ef4444' }
+  ];
   
-  const riskData = {
-    labels: ['เสี่ยงต่ำ', 'เสี่ยงปานกลาง', 'เสี่ยงสูง'],
-    datasets: [{
-      label: 'จำนวนโครงงานตามระดับความเสี่ยง',
-      data: [projects.length - 4, 2, 2],
-      backgroundColor: ['#22C55E', '#F97316', '#EF4444'],
-    }]
-  };
+  const riskData = [
+    { name: 'เสี่ยงต่ำ', count: projects.length - 4 },
+    { name: 'เสี่ยงปานกลาง', count: 2 },
+    { name: 'เสี่ยงสูง', count: 2 }
+  ];
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto font-sans">
@@ -95,7 +91,7 @@ const AdminDashboard: React.FC = () => {
             ระดับความเสี่ยงของโครงงาน
           </h2>
           <div className="h-64">
-            <BarChart data={riskData} />
+            <BarChart data={riskData} xKey="name" bars={[{key: 'count', name: 'จำนวนโครงงาน', color: '#063B78'}]} />
           </div>
         </div>
       </div>
