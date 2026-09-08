@@ -40,7 +40,7 @@ const StudentSettings = () => {
             <div className="p-4 bg-gray-50">
               <div className="flex justify-between items-center text-sm py-2">
                 <span className="text-gray-500">กลุ่มเรียน</span>
-                <span className="font-medium text-gray-900">{student?.section || '1'}</span>
+                <span className="font-medium text-gray-900">กลุ่มที่ 1</span>
               </div>
               <div className="flex justify-between items-center text-sm py-2">
                 <span className="text-gray-500">สถานะ</span>

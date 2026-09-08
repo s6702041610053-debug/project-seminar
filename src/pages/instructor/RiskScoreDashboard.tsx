@@ -99,9 +99,9 @@ const RiskScoreDashboard = () => {
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
         <SummaryCard icon={Users} title="นักศึกษาทั้งหมด" value={summary.totalStudents} color="bg-blue-600" />
-        <SummaryCard icon={ShieldCheck} title="Low Risk" value={summary.lowRisk} subtitle={`${summary.lowPercentage}%`} color="bg-green-600" />
-        <SummaryCard icon={AlertTriangle} title="Medium Risk" value={summary.mediumRisk} subtitle={`${summary.mediumPercentage}%`} color="bg-orange-500" />
-        <SummaryCard icon={AlertCircle} title="High Risk" value={summary.highRisk} subtitle={`${summary.highPercentage}%`} color="bg-red-500" />
+        <SummaryCard icon={ShieldCheck} title="Low Risk" value={summary.lowRisk} subtitle={`${summary.totalStudents ? Math.round((summary.lowRisk/summary.totalStudents)*100) : 0}%`} color="bg-green-600" />
+        <SummaryCard icon={AlertTriangle} title="Medium Risk" value={summary.mediumRisk} subtitle={`${summary.totalStudents ? Math.round((summary.mediumRisk/summary.totalStudents)*100) : 0}%`} color="bg-orange-500" />
+        <SummaryCard icon={AlertCircle} title="High Risk" value={summary.highRisk} subtitle={`${summary.totalStudents ? Math.round((summary.highRisk/summary.totalStudents)*100) : 0}%`} color="bg-red-500" />
         <SummaryCard icon={Users} title="Risk Score เฉลี่ย" value={`${summary.averageRiskScore}/100`} color="bg-gray-600" />
       </div>
 

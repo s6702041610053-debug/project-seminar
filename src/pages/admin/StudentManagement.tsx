@@ -59,7 +59,7 @@ const StudentManagement: React.FC = () => {
             </thead>
             <tbody className="text-sm">
               {filteredStudents.map((student, index) => {
-                const project = projects.find(p => p.projectId === student.projectId);
+                const project = projects.find(p => p.id === student.projectId);
                 return (
                   <tr key={student.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="p-4 text-center text-gray-500">{index + 1}</td>
@@ -72,7 +72,7 @@ const StudentManagement: React.FC = () => {
                       </span>
                     </td>
                     <td className="p-4 text-gray-600">
-                      {project ? <span className="truncate max-w-[150px] block" title={project.titleTh}>{project.titleTh}</span> : '-'}
+                      {project ? <span className="truncate max-w-[150px] block" title={project.title}>{project.title}</span> : '-'}
                     </td>
                     <td className="p-4">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Users, CheckCircle, XCircle, TrendingUp, Presentation, Star, Eye, Search, ChevronLeft, ChevronRight 
+  Users, CheckCircle, XCircle, TrendingUp, Presentation, Eye, Search, Calendar, Clock, Check, X, FileText
 } from 'lucide-react';
 import { 
   students, allPresentationAssessments,
@@ -40,191 +40,324 @@ const ScoreLevelBadge = ({ level }: { level: string }) => {
 
 const PresentationDashboard = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [activeTab, setActiveTab] = useState('overview');
   
+  // Grading Modal State
+  const [showGradeModal, setShowGradeModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+
+  // Mock Requests State
+  const [requests, setRequests] = useState([
+    { id: '1', studentId: 's6501001', name: 'นายกิตติพงศ์ สุขสวัสดิ์', type: 'Progress Presentation', date: '2024-10-07', time: '13:00', status: 'pending' },
+    { id: '2', studentId: 's6501002', name: 'นายธนพล เจริญยิ่ง', type: 'Proposal Presentation', date: '2024-10-08', time: '09:00', status: 'pending' }
+  ]);
+
   const summary = getPresentationSummary();
   const presentationAverageData = getPresentationAverageByRound();
   
   const presentationLevelData = [
-    { name: 'สัดส่วนระดับผลการนำเสนอ', 'ดีมาก': 15, 'ดี': 10, 'พอใช้': 5, 'ไม่ผ่าน': 2 }
+    { name: 'ดีมาก', value: 15, color: '#22c55e' },
+    { name: 'ดี', value: 10, color: '#3b82f6' },
+    { name: 'พอใช้', value: 5, color: '#eab308' },
+    { name: 'ไม่ผ่าน', value: 2, color: '#ef4444' }
   ];
 
   const scoreDistributionData = [
-    { name: 'การกระจายคะแนนเฉลี่ย', '0-49': 1, '50-59': 2, '60-69': 5, '70-79': 10, '80-89': 12, '90-100': 2 }
+    { name: '0-49', '0-49': 1 },
+    { name: '50-59', '50-59': 2 },
+    { name: '60-69', '60-69': 5 },
+    { name: '70-79', '70-79': 10 },
+    { name: '80-89', '80-89': 12 },
+    { name: '90-100', '90-100': 2 }
   ];
 
   const tableData = useMemo(() => {
-    let data = students.map(student => {
+    return students.map(student => {
       const proposal = 85;
       const progress = 82;
       const preFinal = 80;
-      const final = 0;
-      const averageScore = calculatePresentationAverage([proposal, progress, preFinal]);
+      const averageScore = calculatePresentationAverage([
+        { percentage: proposal } as any, 
+        { percentage: progress } as any, 
+        { percentage: preFinal } as any
+      ]);
       const level = getScoreLevel(averageScore);
+      const final = 0;
       
       return {
         id: student.id,
-        studentName: `${student.firstName} ${student.lastName}`,
+        studentName: student.name,
         proposal,
         progress,
         preFinal,
         final,
         averageScore,
         level,
-        status: 'ผ่านเกณฑ์' // Mock status
+        status: 'ผ่านเกณฑ์'
       };
     });
+  }, []);
 
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      data = data.filter(item => 
-        item.id.toLowerCase().includes(lowerSearch) || 
-        item.studentName.toLowerCase().includes(lowerSearch)
-      );
-    }
-    
-    return data;
-  }, [searchTerm]);
+  const handleApprove = (id: string) => {
+    setRequests(requests.map(r => r.id === id ? { ...r, status: 'approved' } : r));
+    alert('อนุมัติวันนำเสนอเรียบร้อยแล้ว');
+  };
 
-  const totalPages = Math.ceil(tableData.length / itemsPerPage);
-  const currentData = tableData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const handleGradeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    alert('บันทึกคะแนนและส่งแจ้งเตือนให้นักศึกษาเรียบร้อยแล้ว');
+    setShowGradeModal(false);
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Presentation Assessment Dashboard</h1>
-        <p className="text-gray-500">ผลการประเมินการนำเสนอ</p>
+        <h1 className="text-2xl font-bold text-gray-800">Presentation Assessment</h1>
+        <p className="text-gray-500">จัดการและประเมินการนำเสนอโครงงาน</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <SummaryCard icon={Users} title="นักศึกษาทั้งหมด" value={summary.totalStudents} color="bg-blue-600" />
-        <SummaryCard icon={Presentation} title="นำเสนอแล้ว" value={summary.presentedCount} subtitle={`${summary.presentedPercentage}%`} color="bg-green-600" />
-        <SummaryCard icon={XCircle} title="ยังไม่นำเสนอ" value={summary.notPresentedCount} subtitle={`${summary.notPresentedPercentage}%`} color="bg-orange-500" />
-        <SummaryCard icon={TrendingUp} title="คะแนนเฉลี่ยรวม" value={`${summary.overallAverage}%`} color="bg-blue-500" />
-        <SummaryCard icon={CheckCircle} title="ผ่านเกณฑ์" value={summary.passedCount} color="bg-green-500" />
-        <SummaryCard icon={XCircle} title="ไม่ผ่านเกณฑ์" value={summary.failedCount} color="bg-red-500" />
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 overflow-x-auto">
+        <button 
+          onClick={() => setActiveTab('overview')}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          ภาพรวม
+        </button>
+        <button 
+          onClick={() => setActiveTab('requests')}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'requests' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          คำขอนำเสนอ
+          {requests.filter(r => r.status === 'pending').length > 0 && (
+            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{requests.filter(r => r.status === 'pending').length}</span>
+          )}
+        </button>
+        <button 
+          onClick={() => setActiveTab('assessment')}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'assessment' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          รอประเมินคะแนน
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">คะแนนเฉลี่ยการนำเสนอแต่ละครั้ง</h2>
-          <div className="h-64">
-            <LineChartComponent data={presentationAverageData} />
+      {activeTab === 'overview' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <SummaryCard icon={Users} title="นักศึกษาทั้งหมด" value={summary.totalStudents} color="bg-blue-600" />
+            <SummaryCard icon={Presentation} title="นำเสนอแล้ว" value={summary.presented} subtitle={`${Math.round((summary.presented / summary.totalStudents) * 100)}%`} color="bg-green-600" />
+            <SummaryCard icon={XCircle} title="ยังไม่นำเสนอ" value={summary.notPresented} subtitle={`${Math.round((summary.notPresented / summary.totalStudents) * 100)}%`} color="bg-orange-500" />
+            <SummaryCard icon={TrendingUp} title="คะแนนเฉลี่ยรวม" value={`${summary.averageScore}%`} color="bg-blue-500" />
+            <SummaryCard icon={CheckCircle} title="ผ่านเกณฑ์" value={summary.passed} color="bg-green-500" />
+            <SummaryCard icon={XCircle} title="ไม่ผ่านเกณฑ์" value={summary.failed} color="bg-red-500" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">คะแนนเฉลี่ยการนำเสนอแต่ละครั้ง</h2>
+              <div className="h-64">
+                <LineChartComponent data={presentationAverageData} xKey="round" lines={[{ key: 'averageScore', name: 'คะแนนเฉลี่ย', color: '#3b82f6' }]} />
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">สัดส่วนระดับผลการนำเสนอ</h2>
+              <div className="h-64">
+                <DonutChart data={presentationLevelData} />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">รายการผลการนำเสนอ</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
+                    <th className="p-4 font-medium">รหัสนักศึกษา</th>
+                    <th className="p-4 font-medium">ชื่อ-สกุล</th>
+                    <th className="p-4 font-medium">Proposal</th>
+                    <th className="p-4 font-medium">Progress</th>
+                    <th className="p-4 font-medium">Pre-Final</th>
+                    <th className="p-4 font-medium">คะแนนเฉลี่ย</th>
+                    <th className="p-4 font-medium">สถานะ</th>
+                    <th className="p-4 font-medium text-center">ดูข้อมูล</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableData.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="p-4 text-sm font-medium text-gray-800">{item.id}</td>
+                      <td className="p-4 text-sm text-gray-600">{item.studentName}</td>
+                      <td className="p-4 text-sm text-gray-600">{item.proposal}</td>
+                      <td className="p-4 text-sm text-gray-600">{item.progress}</td>
+                      <td className="p-4 text-sm text-gray-600">{item.preFinal}</td>
+                      <td className="p-4 text-sm text-gray-600 font-medium">{item.averageScore}%</td>
+                      <td className="p-4">
+                        <ScoreLevelBadge level={item.level.labelTh} />
+                      </td>
+                      <td className="p-4 text-center">
+                        <button onClick={() => navigate(`/instructor/students/${item.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg">
+                          <Eye className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">สัดส่วนระดับผลการนำเสนอ</h2>
-          <div className="h-64">
-            <DonutChart data={presentationLevelData} />
-          </div>
-        </div>
-      </div>
+      )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">การกระจายคะแนนเฉลี่ย</h2>
-        <div className="h-64">
-          <BarChartComponent data={scoreDistributionData} xKey="name" bars={[{key: "0-49", name: "0-49", color: "#ef4444"}, {key: "50-59", name: "50-59", color: "#f97316"}, {key: "60-69", name: "60-69", color: "#eab308"}, {key: "70-79", name: "70-79", color: "#3b82f6"}, {key: "80-89", name: "80-89", color: "#22c55e"}, {key: "90-100", name: "90-100", color: "#15803d"}]} />
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h2 className="text-lg font-semibold text-gray-800">รายการผลการนำเสนอ</h2>
-          <div className="relative">
-            <input 
-              type="text" 
-              placeholder="ค้นหารหัสนักศึกษา, ชื่อ..." 
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 w-full sm:w-64"
-            />
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-          </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-100">
-                <th className="p-4 font-medium">รหัสนักศึกษา</th>
-                <th className="p-4 font-medium">ชื่อ-สกุล</th>
-                <th className="p-4 font-medium">Proposal</th>
-                <th className="p-4 font-medium">Progress</th>
-                <th className="p-4 font-medium">Pre-Final</th>
-                <th className="p-4 font-medium">Final</th>
-                <th className="p-4 font-medium">คะแนนเฉลี่ย</th>
-                <th className="p-4 font-medium">ระดับ</th>
-                <th className="p-4 font-medium">สถานะ</th>
-                <th className="p-4 font-medium text-center">การดำเนินการ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.length > 0 ? currentData.map((item) => (
-                <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="p-4 text-sm font-medium text-gray-800">{item.id}</td>
-                  <td className="p-4 text-sm text-gray-600">{item.studentName}</td>
-                  <td className="p-4 text-sm text-gray-600">{item.proposal || '-'}</td>
-                  <td className="p-4 text-sm text-gray-600">{item.progress || '-'}</td>
-                  <td className="p-4 text-sm text-gray-600">{item.preFinal || '-'}</td>
-                  <td className="p-4 text-sm text-gray-600">{item.final || '-'}</td>
-                  <td className="p-4 text-sm text-gray-600 font-medium">{item.averageScore}%</td>
-                  <td className="p-4">
-                    <ScoreLevelBadge level={item.level} />
-                  </td>
-                  <td className="p-4 text-sm">
-                    <span className={`px-2 py-1 rounded text-xs ${item.status === 'ผ่านเกณฑ์' ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'}`}>
-                      {item.status}
+      {activeTab === 'requests' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fadeIn">
+          <h2 className="text-lg font-semibold text-gray-800 mb-6">คำขอนัดหมายการนำเสนอ</h2>
+          <div className="space-y-4">
+            {requests.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">ไม่มีคำขอนัดหมายใหม่</p>
+            ) : requests.map(req => (
+              <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
+                <div className="flex items-start gap-4 mb-4 sm:mb-0">
+                  <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">
+                    {req.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">{req.name}</h3>
+                    <p className="text-sm text-gray-500">{req.studentId} • {req.type}</p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span className="flex items-center gap-1 text-sm text-gray-600 bg-white px-2 py-1 rounded border border-gray-200">
+                        <Calendar className="w-4 h-4 text-gray-400" /> {req.date}
+                      </span>
+                      <span className="flex items-center gap-1 text-sm text-gray-600 bg-white px-2 py-1 rounded border border-gray-200">
+                        <Clock className="w-4 h-4 text-gray-400" /> {req.time}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {req.status === 'pending' ? (
+                    <>
+                      <button onClick={() => alert('เปิดหน้าต่างเปลี่ยนวัน')} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        เปลี่ยนวัน
+                      </button>
+                      <button onClick={() => handleApprove(req.id)} className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                        <Check className="w-4 h-4" /> อนุมัติ
+                      </button>
+                    </>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                      <CheckCircle className="w-4 h-4" /> อนุมัติแล้ว
                     </span>
-                  </td>
-                  <td className="p-4 text-center">
-                    <button 
-                      onClick={() => navigate(`/student/${item.id}`)}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <Eye className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={10} className="p-8 text-center text-gray-500">
-                    ไม่พบข้อมูล
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+      )}
 
-        {totalPages > 1 && (
-          <div className="p-4 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-sm text-gray-500">
-              แสดง {(currentPage - 1) * itemsPerPage + 1} ถึง {Math.min(currentPage * itemsPerPage, tableData.length)} จาก {tableData.length} รายการ
-            </span>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-1 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                <ChevronLeft className="w-5 h-5" />
+      {activeTab === 'assessment' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fadeIn">
+          <h2 className="text-lg font-semibold text-gray-800 mb-6">รายการรอประเมิน (วันนี้)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {requests.filter(r => r.status === 'approved').map(req => (
+              <div key={req.id} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div className="bg-blue-50 p-4 border-b border-blue-100">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">{req.type}</span>
+                    <span className="text-sm font-medium text-gray-500 bg-white px-2 py-0.5 rounded">{req.time}</span>
+                  </div>
+                  <h3 className="font-bold text-gray-900">{req.name}</h3>
+                  <p className="text-sm text-gray-500">{req.studentId}</p>
+                </div>
+                <div className="p-4 bg-white space-y-4">
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">เอกสารแนบ</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-700 p-2 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 cursor-pointer transition-colors">
+                        <FileText className="w-4 h-4 text-blue-500" />
+                        <span className="truncate">Report_Draft.pdf</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-700 p-2 bg-gray-50 rounded border border-gray-100 hover:bg-gray-100 cursor-pointer transition-colors">
+                        <Presentation className="w-4 h-4 text-orange-500" />
+                        <span className="truncate">Presentation_Slides.pdf</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => { setSelectedStudent(req); setShowGradeModal(true); }}
+                    className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    ประเมินให้คะแนน
+                  </button>
+                </div>
+              </div>
+            ))}
+            {requests.filter(r => r.status === 'approved').length === 0 && (
+              <div className="col-span-full py-12 text-center text-gray-500">
+                ไม่มีรายการรอประเมิน
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Grading Modal */}
+      {showGradeModal && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">ประเมินผล: {selectedStudent.type}</h2>
+                <p className="text-sm text-gray-500">{selectedStudent.name} ({selectedStudent.studentId})</p>
+              </div>
+              <button onClick={() => setShowGradeModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-6 h-6" /></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              <form id="gradeForm" onSubmit={handleGradeSubmit} className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">เกณฑ์การให้คะแนน (Rubric)</h3>
+                  <div className="space-y-4">
+                    {['เนื้อหา (Content) - 40%', 'การนำเสนอ (Delivery) - 30%', 'สื่อประกอบ (Visuals) - 15%', 'การตอบคำถาม (Q&A) - 15%'].map((rubric, idx) => (
+                      <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-gray-50 rounded-lg">
+                        <label className="font-medium text-gray-700">{rubric}</label>
+                        <select className="w-full sm:w-32 border border-gray-300 rounded p-1.5 focus:border-blue-500 focus:ring-blue-500">
+                          <option value="5">5 - ดีมาก</option>
+                          <option value="4">4 - ดี</option>
+                          <option value="3">3 - ปานกลาง</option>
+                          <option value="2">2 - พอใช้</option>
+                          <option value="1">1 - ต้องปรับปรุง</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">ข้อเสนอแนะเพื่อการพัฒนา (Feedback)</h3>
+                  <textarea 
+                    rows={4} 
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:ring-blue-500 resize-none"
+                    placeholder="พิมพ์ข้อเสนอแนะให้นักศึกษา..."
+                    required
+                  ></textarea>
+                </div>
+              </form>
+            </div>
+            
+            <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 rounded-b-xl">
+              <button onClick={() => setShowGradeModal(false)} className="px-5 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors">
+                ยกเลิก
               </button>
-              <span className="text-sm text-gray-600 font-medium px-2">
-                หน้า {currentPage} / {totalPages}
-              </span>
-              <button 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="p-1 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                <ChevronRight className="w-5 h-5" />
+              <button type="submit" form="gradeForm" className="px-5 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                บันทึกคะแนน
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   );
 };

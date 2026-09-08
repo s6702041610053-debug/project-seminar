@@ -2,17 +2,11 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
-
-// In a real app, this would use a real context
-// import { useAuth } from '../../contexts/AuthContext';
-const useMockAuth = () => ({
-  user: { name: 'สมชาย ใจดี', role: 'instructor' as const },
-  logout: () => console.log('Logged out')
-});
+import { useAuth } from '../../contexts/AuthContext';
 
 export const Layout: React.FC = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { user, logout } = useMockAuth();
+  const { user, logout } = useAuth();
   
   if (!user) return <div className="flex h-screen items-center justify-center">กำลังโหลด...</div>;
 

@@ -13,8 +13,13 @@ import DonutChart from '../../components/charts/DonutChart';
 import LineChartComponent from '../../components/charts/LineChart';
 import BarChartComponent from '../../components/charts/BarChart';
 
-const SummaryCard = ({ icon: Icon, title, value, subtitle, color }: {icon: any, title: string, value: string|number, subtitle?: string, color: string}) => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+import { X } from 'lucide-react';
+
+const SummaryCard = ({ icon: Icon, title, value, subtitle, color, onClick }: any) => (
+  <div 
+    onClick={onClick}
+    className={`bg-white rounded-xl shadow-sm border border-gray-100 p-6 ${onClick ? 'cursor-pointer hover:shadow-md transition-all hover:-translate-y-1' : ''}`}
+  >
     <div className="flex items-center gap-4">
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
         <Icon className="w-6 h-6 text-white" />
@@ -48,6 +53,7 @@ export default function WeeklyProgressDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showListModal, setShowListModal] = useState<{title: string, data: any[]} | null>(null);
   const itemsPerPage = 10;
   
   const summary = useMemo(() => {
@@ -127,8 +133,28 @@ export default function WeeklyProgressDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
         <SummaryCard icon={Users} title="นักศึกษาทั้งหมด" value={summary.totalStudents} color="bg-blue-600" />
         <SummaryCard icon={CheckCircle} title="ส่งงานตรงเวลา" value={summary.onTime} subtitle={`${summary.onTimePercentage}%`} color="bg-green-600" />
-        <SummaryCard icon={Clock} title="ส่งงานล่าช้า" value={summary.late} subtitle={`${summary.latePercentage}%`} color="bg-yellow-500" />
-        <SummaryCard icon={XCircle} title="ยังไม่ส่งงาน" value={summary.notSubmitted} subtitle={`${summary.missingPercentage}%`} color="bg-red-500" />
+        <SummaryCard 
+          icon={Clock} 
+          title="ส่งงานล่าช้า" 
+          value={summary.late} 
+          subtitle={`${summary.latePercentage}%`} 
+          color="bg-yellow-500" 
+          onClick={() => setShowListModal({ 
+            title: 'รายชื่อนักศึกษาที่ส่งงานล่าช้า (มีประวัติส่งล่าช้า)', 
+            data: tableData.filter(d => d.late > 0).sort((a,b) => b.late - a.late) 
+          })}
+        />
+        <SummaryCard 
+          icon={XCircle} 
+          title="ยังไม่ส่งงาน" 
+          value={summary.notSubmitted} 
+          subtitle={`${summary.missingPercentage}%`} 
+          color="bg-red-500" 
+          onClick={() => setShowListModal({ 
+            title: 'รายชื่อนักศึกษาที่ยังไม่ส่งงาน', 
+            data: tableData.filter(d => d.missing > 0).sort((a,b) => b.missing - a.missing) 
+          })}
+        />
         <SummaryCard icon={TrendingUp} title="คะแนนเฉลี่ยสัปดาห์ล่าสุด" value={`${summary.averageScore}%`} color="bg-blue-500" />
       </div>
 
@@ -265,6 +291,52 @@ export default function WeeklyProgressDashboard() {
           </div>
         )}
       </div>
+
+      {/* List Modal */}
+      {showListModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+              <h2 className="text-xl font-bold text-gray-900">{showListModal.title}</h2>
+              <button onClick={() => setShowListModal(null)} className="text-gray-400 hover:text-gray-600"><X className="w-6 h-6" /></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-4">
+                {showListModal.data.length > 0 ? showListModal.data.map(student => (
+                  <div key={student.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50">
+                    <div>
+                      <h3 className="font-bold text-gray-900">{student.studentName}</h3>
+                      <p className="text-sm text-gray-500">{student.studentId}</p>
+                    </div>
+                    <div className="flex gap-4">
+                      {showListModal.title.includes('ล่าช้า') ? (
+                        <span className="text-sm text-yellow-600 font-medium">ส่งล่าช้า {student.late} ครั้ง</span>
+                      ) : (
+                        <span className="text-sm text-red-600 font-medium">ยังไม่ส่ง {student.missing} ครั้ง</span>
+                      )}
+                      <button 
+                        onClick={() => navigate(`/instructor/students/${student.id}`)}
+                        className="text-blue-600 hover:underline text-sm font-medium"
+                      >
+                        ดูข้อมูล
+                      </button>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-8 text-gray-500">ไม่พบรายชื่อในหมวดหมู่นี้</div>
+                )}
+              </div>
+            </div>
+            
+            <div className="p-4 border-t border-gray-100 flex justify-end bg-gray-50/50 rounded-b-xl">
+              <button onClick={() => setShowListModal(null)} className="px-5 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg">
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

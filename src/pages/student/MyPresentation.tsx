@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { getStudentPresentations } from '../../data/mockData';
-import { calculatePresentationAverage, getPresentationLevel, PRESENTATION_LEVELS } from '../../utils/calculations';
+import { calculatePresentationAverage, getPresentationLevel } from '../../utils/calculations';
 import LineChartComponent from '../../components/charts/LineChart';
-import { Mic, Award, Star, BarChart2 } from 'lucide-react';
+import { Mic, Award, Star, BarChart2, Calendar, Clock, Plus, CheckCircle2, XCircle } from 'lucide-react';
 
 const SummaryCard = ({ title, value, subtitle, icon: Icon, colorClass }: any) => (
   <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start gap-4">
@@ -21,8 +21,21 @@ const MyPresentation = () => {
   const studentId = 's6501001';
   const presentations = getStudentPresentations(studentId);
   const avgScore = useMemo(() => calculatePresentationAverage(presentations), [presentations]);
-  const level = useMemo(() => getPresentationLevel(avgScore), [avgScore]);
-  const levelInfo = PRESENTATION_LEVELS[level];
+  const levelInfo = getPresentationLevel(avgScore);
+
+  // Scheduling State
+  const [showScheduleForm, setShowScheduleForm] = React.useState(false);
+  const [requests, setRequests] = React.useState([
+    { id: '1', type: 'Proposal Presentation', date: '2024-10-07', time: '13:00', status: 'pending' }
+  ]);
+  const [formData, setFormData] = React.useState({ type: 'Progress Presentation', date: '', time: '' });
+
+  const handleScheduleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRequests([...requests, { id: Date.now().toString(), ...formData, status: 'pending' }]);
+    setShowScheduleForm(false);
+    setFormData({ type: 'Progress Presentation', date: '', time: '' });
+  };
 
   const chartData = useMemo(() => {
     return presentations.map(p => ({
@@ -66,11 +79,106 @@ const MyPresentation = () => {
         />
       </div>
 
+      {/* Scheduling Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-gray-900">การนัดหมายนำเสนอ</h3>
+          <button 
+            onClick={() => setShowScheduleForm(!showScheduleForm)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            {showScheduleForm ? 'ยกเลิก' : <><Plus className="w-4 h-4" /> นัดวันนำเสนอ</>}
+          </button>
+        </div>
+
+        {showScheduleForm && (
+          <form onSubmit={handleScheduleSubmit} className="mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">รอบการนำเสนอ</label>
+                <select 
+                  value={formData.type}
+                  onChange={e => setFormData({...formData, type: e.target.value})}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 border"
+                >
+                  <option>Proposal Presentation</option>
+                  <option>Progress Presentation</option>
+                  <option>Pre-Final Presentation</option>
+                  <option>Final Presentation</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">วันที่ต้องการ</label>
+                <input 
+                  type="date" 
+                  required
+                  value={formData.date}
+                  onChange={e => setFormData({...formData, date: e.target.value})}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 border text-gray-700"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">เวลา</label>
+                <input 
+                  type="time" 
+                  required
+                  value={formData.time}
+                  onChange={e => setFormData({...formData, time: e.target.value})}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 border text-gray-700"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button type="submit" className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium">
+                ส่งคำขอนัดหมาย
+              </button>
+            </div>
+          </form>
+        )}
+
+        <div className="space-y-3">
+          {requests.map(req => (
+            <div key={req.id} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">{req.type}</h4>
+                  <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {req.date}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {req.time}</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                {req.status === 'pending' ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                    <Clock className="w-4 h-4 mr-1.5" /> รออาจารย์อนุมัติ
+                  </span>
+                ) : req.status === 'approved' ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <CheckCircle2 className="w-4 h-4 mr-1.5" /> อนุมัติแล้ว
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                    <XCircle className="w-4 h-4 mr-1.5" /> ถูกปฏิเสธ
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+          {requests.length === 0 && (
+            <div className="text-center py-6 text-gray-500">ไม่มีคำขอนัดหมาย</div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">กราฟคะแนนนำเสนอ</h3>
           <div className="h-80">
-            <LineChartComponent data={chartData} />
+            <LineChartComponent data={chartData} xKey="name" lines={[{ key: 'คะแนนนำเสนอ', name: 'คะแนนนำเสนอ', color: '#3b82f6' }]} />
           </div>
         </div>
 
@@ -132,8 +240,7 @@ const MyPresentation = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {presentations.map((p) => {
-                const pLevel = getPresentationLevel(p.percentage);
-                const pLevelInfo = PRESENTATION_LEVELS[pLevel];
+                const pLevelInfo = getPresentationLevel(p.percentage);
                 return (
                   <tr key={p.presentationNumber}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">

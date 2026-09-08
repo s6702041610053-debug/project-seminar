@@ -31,22 +31,15 @@ const MyWeeklyProgress = () => {
   const studentId = 's6501001';
   const weeklyScores = getStudentWeeklyScores(studentId);
   const weeklyAvg = useMemo(() => calculateWeeklyAverage(weeklyScores), [weeklyScores]);
-  const trend = useMemo(() => analyzeTrend(weeklyScores), [weeklyScores]);
+  const trend = useMemo(() => analyzeTrend(weeklyScores.map(w => w.percentage)), [weeklyScores]);
   const trendInfo = TREND_INFO[trend];
   const TrendIcon = trendInfo.icon;
   
   const chartData = useMemo(() => {
-    return {
-      labels: weeklyScores.map(w => `W${w.week}`),
-      datasets: [
-        {
-          label: 'คะแนนความก้าวหน้า',
-          data: weeklyScores.map(w => w.score),
-          borderColor: '#065F46',
-          backgroundColor: '#065F46',
-        }
-      ]
-    };
+    return weeklyScores.map(w => ({
+      week: `W${w.week}`,
+      score: w.percentage
+    }));
   }, [weeklyScores]);
 
   return (
@@ -66,7 +59,7 @@ const MyWeeklyProgress = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-center items-center">
           <p className="text-sm text-gray-500 font-medium mb-2">แนวโน้ม</p>
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${trendInfo.color} ${trendInfo.bgColor}`}>
-            <TrendIcon className="w-5 h-5" />
+            <span className="text-xl font-bold">{trendInfo.icon}</span>
             <span className="font-semibold">{trendInfo.label}</span>
           </div>
         </div>
@@ -87,7 +80,7 @@ const MyWeeklyProgress = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">กราฟคะแนนรายสัปดาห์</h3>
         <div className="h-80">
-          <LineChartComponent data={chartData} />
+          <LineChartComponent data={chartData} xKey="week" lines={[{ key: 'score', name: 'คะแนน', color: '#065F46' }]} />
         </div>
       </div>
 
@@ -110,10 +103,10 @@ const MyWeeklyProgress = () => {
                     Week {record.week}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <StatusBadge status={record.status} />
+                    <StatusBadge status={record.submissionStatus} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                    {record.score}
+                    {record.percentage}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-md truncate">
                     {record.feedback || '-'}

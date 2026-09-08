@@ -58,20 +58,20 @@ const InstructorDashboard = () => {
 
   const tableData = useMemo(() => {
     let data = projects.map(project => {
-      const student = students.find(s => s.id === project.studentIds[0]) || students[0];
+      const student = students.find(s => s.id === project.studentId) || students[0];
       const riskScore = allRiskScores.find(r => r.studentId === student.id);
       
       return {
         id: project.id,
         studentId: student.id,
-        studentName: `${student.firstName} ${student.lastName}`,
+        studentName: student.name,
         projectName: project.title,
         advisor: project.advisorId,
         progress: project.progress,
         averageScore: 82.5, // Mock calculated average
-        riskScore: riskScore?.riskScore || 0,
-        riskLevel: riskScore?.riskLevel || 'low',
-        trend: 'improving', // Mock trend
+        riskScore: riskScore?.totalScore || 0,
+        riskLevel: riskScore?.finalLevel || 'low',
+        trend: 'stable', // Mock trend
         status: project.status
       };
     });
@@ -116,25 +116,34 @@ const InstructorDashboard = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <SummaryCard icon={Users} title="นักศึกษาทั้งหมด" value={summary.totalStudents} color="bg-blue-600" />
         <SummaryCard icon={BookOpen} title="โครงงานทั้งหมด" value={summary.totalProjects} color="bg-blue-600" />
-        <SummaryCard icon={FileText} title="เสนอหัวข้อแล้ว" value={summary.statusProposed} color="bg-green-600" />
-        <SummaryCard icon={Activity} title="กำลังดำเนินการ" value={summary.statusInProgress} color="bg-yellow-500" />
-        <SummaryCard icon={Send} title="ส่งเล่มแล้ว" value={summary.statusSubmitted} color="bg-blue-500" />
-        <SummaryCard icon={CheckCircle} title="ผ่านการประเมิน" value={summary.statusPassed} color="bg-green-500" />
-        <SummaryCard icon={Edit} title="อยู่ระหว่างแก้ไข" value={summary.statusRevising} color="bg-orange-500" />
-        <SummaryCard icon={AlertTriangle} title="มีความเสี่ยงสูง" value={summary.highRiskStudents} color="bg-red-500" />
+        <SummaryCard icon={FileText} title="เสนอหัวข้อแล้ว" value={summary.proposedTopics} color="bg-green-600" />
+        <SummaryCard icon={Activity} title="กำลังดำเนินการ" value={summary.inProgress} color="bg-yellow-500" />
+        <SummaryCard icon={Send} title="ส่งเล่มแล้ว" value={summary.submitted} color="bg-blue-500" />
+        <SummaryCard icon={CheckCircle} title="ผ่านการประเมิน" value={summary.passed} color="bg-green-500" />
+        <SummaryCard icon={Edit} title="อยู่ระหว่างแก้ไข" value={summary.underRevision} color="bg-orange-500" />
+        <SummaryCard icon={AlertTriangle} title="มีความเสี่ยงสูง" value={summary.highRisk} color="bg-red-500" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">สถานะโครงงาน</h2>
           <div className="h-64">
-            <DonutChart data={projectStatusData} />
+            <DonutChart data={projectStatusData.map((d: any) => ({ name: d.status, value: d.count, color: d.color }))} />
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">ความก้าวหน้าโครงงาน</h2>
           <div className="h-64">
-            <BarChartComponent data={projectProgressData} />
+            <BarChartComponent 
+              data={projectProgressData} 
+              xKey="name" 
+              bars={[
+                { key: '0-25%', name: '0-25%', color: '#ef4444' },
+                { key: '26-50%', name: '26-50%', color: '#f97316' },
+                { key: '51-75%', name: '51-75%', color: '#3b82f6' },
+                { key: '76-100%', name: '76-100%', color: '#22c55e' }
+              ]} 
+            />
           </div>
         </div>
       </div>
@@ -143,13 +152,13 @@ const InstructorDashboard = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">แนวโน้มคะแนนเฉลี่ยรายสัปดาห์</h2>
           <div className="h-64">
-            <LineChartComponent data={weeklyAverageData} />
+            <LineChartComponent data={weeklyAverageData} xKey="week" lines={[{ key: 'average', name: 'คะแนนเฉลี่ย', color: '#3B82F6' }]} />
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">การกระจายความเสี่ยง</h2>
           <div className="h-64">
-            <DonutChart data={riskDistributionData} />
+            <DonutChart data={riskDistributionData.map((d: any) => ({ name: d.level, value: d.count, color: d.color }))} />
           </div>
         </div>
       </div>

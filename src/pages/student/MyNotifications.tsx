@@ -3,7 +3,7 @@ import { notifications } from '../../data/mockData';
 import { Bell, Check, Info, AlertCircle, FileText } from 'lucide-react';
 
 const MyNotifications = () => {
-  const studentNotifications = notifications.filter(n => n.targetRole === 'student' || n.targetRole === 'all');
+  const studentNotifications = notifications.filter(n => n.targetRole === 'student');
 
   const getIcon = (type: string) => {
     switch (type) {

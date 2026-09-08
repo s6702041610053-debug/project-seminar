@@ -18,8 +18,8 @@ export default function DonutChart({
   showLegend = true,
   showLabel = true,
 }: DonutChartProps) {
-  const renderLabel = ({ name, percent }: { name: string; percent: number }) => {
-    return `${name} ${(percent * 100).toFixed(0)}%`;
+  const renderLabel = (props: any) => {
+    return `${props.name} ${(props.percent * 100).toFixed(0)}%`;
   };
 
   return (
@@ -41,7 +41,7 @@ export default function DonutChart({
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number) => [value, '']}
+          formatter={(value: any) => [value, '']}
           contentStyle={{ borderRadius: '10px', border: '1px solid #e5e7eb', fontFamily: 'Noto Sans Thai' }}
         />
         {showLegend && (

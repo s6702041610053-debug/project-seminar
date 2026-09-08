@@ -39,22 +39,10 @@ const MyRiskScore = () => {
   
   const chartData = useMemo(() => {
     // Generate some mock historical risk scores based on weekly scores
-    const history = weeklyScores.map((w, i) => {
-      // Inversely proportional to score for mockup
-      return Math.max(10, 100 - w.score + (Math.random() * 10 - 5));
-    });
-    
-    return {
-      labels: weeklyScores.map(w => `W${w.week}`),
-      datasets: [
-        {
-          label: 'คะแนนความเสี่ยง',
-          data: history,
-          borderColor: '#EF4444',
-          backgroundColor: '#EF4444',
-        }
-      ]
-    };
+    return weeklyScores.map((w, i) => ({
+      week: `W${w.week}`,
+      risk: Math.max(10, 100 - w.percentage + (Math.random() * 10 - 5))
+    }));
   }, [weeklyScores]);
 
   return (
@@ -82,7 +70,7 @@ const MyRiskScore = () => {
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">แนวโน้มความเสี่ยง</h3>
           <div className="h-64">
-            <LineChartComponent data={chartData} />
+            <LineChartComponent data={chartData} xKey="week" lines={[{ key: 'risk', name: 'ความเสี่ยง', color: '#EF4444' }]} />
           </div>
         </div>
       </div>

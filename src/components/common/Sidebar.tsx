@@ -17,8 +17,8 @@ interface SidebarProps {
 const instructorItems = [
   { path: '/instructor', label: 'ภาพรวม Dashboard', icon: Home },
   { path: '/instructor/projects', label: 'โครงงานนักศึกษา', icon: BookOpen },
+  { path: '/instructor/tracking', label: 'ติดตาม 14 ขั้นตอน', icon: Activity },
   { path: '/instructor/students', label: 'นักศึกษาทั้งหมด', icon: Users },
-  { path: '/instructor/tracking', label: 'การติดตามความก้าวหน้า', icon: Activity },
   { path: '/instructor/weekly-progress', label: 'Weekly Progress', icon: Calendar },
   { path: '/instructor/presentations', label: 'Presentation Assessment', icon: Presentation },
   { path: '/instructor/analytics', label: 'Learning Analytics', icon: BarChart2 },

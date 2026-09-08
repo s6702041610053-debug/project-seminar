@@ -12,6 +12,8 @@ import RiskScoreDashboard from './pages/instructor/RiskScoreDashboard';
 import StudentList from './pages/instructor/StudentList';
 import StudentDetail from './pages/instructor/StudentDetail';
 import ProjectTracking from './pages/instructor/ProjectTracking';
+import InstructorProjects from './pages/instructor/InstructorProjects';
+import LearningAnalytics from './pages/instructor/LearningAnalytics';
 import DocumentManagement from './pages/instructor/DocumentManagement';
 import NotificationCenter from './pages/instructor/NotificationCenter';
 import ReportsPage from './pages/instructor/ReportsPage';
@@ -61,13 +63,13 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route index element={<InstructorDashboard />} />
-        <Route path="projects" element={<ProjectTracking />} />
+        <Route path="projects" element={<InstructorProjects />} />
         <Route path="students" element={<StudentList />} />
         <Route path="students/:studentId" element={<StudentDetail />} />
         <Route path="tracking" element={<ProjectTracking />} />
         <Route path="weekly-progress" element={<WeeklyProgressDashboard />} />
         <Route path="presentations" element={<PresentationDashboard />} />
-        <Route path="analytics" element={<RiskScoreDashboard />} />
+        <Route path="analytics" element={<LearningAnalytics />} />
         <Route path="risk-score" element={<RiskScoreDashboard />} />
         <Route path="notifications" element={<NotificationCenter />} />
         <Route path="reports" element={<ReportsPage />} />

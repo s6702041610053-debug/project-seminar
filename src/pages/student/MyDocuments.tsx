@@ -1,24 +1,106 @@
-import React from 'react';
-import { documents } from '../../data/mockData';
-import { FileText, Download, Upload, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, Download, Upload, Search, X, AlertCircle, Trash2 } from 'lucide-react';
 
 const MyDocuments = () => {
-  const studentId = 's6501001';
-  // Note: documents might not have studentId in mockData, so just filter or show all for demo
-  const myDocs = documents.slice(0, 5); // Fallback mock
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadData, setUploadData] = useState({ round: 'Proposal', type: 'report' });
+  const [myDocs, setMyDocs] = useState([
+    { id: '1', name: 'Proposal_Report.pdf', type: 'report', round: 'Proposal', uploadDate: '2024-09-25', status: 'approved', size: '2.4 MB' },
+    { id: '2', name: 'Proposal_Slides.pdf', type: 'slide', round: 'Proposal', uploadDate: '2024-10-06', status: 'pending', size: '1.2 MB' }
+  ]);
+
+  const handleUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    setMyDocs([{
+      id: Date.now().toString(),
+      name: `Mock_${uploadData.type}_${uploadData.round}.pdf`,
+      type: uploadData.type,
+      round: uploadData.round,
+      uploadDate: new Date().toISOString().split('T')[0],
+      status: 'pending',
+      size: '1.5 MB'
+    }, ...myDocs]);
+    setShowUpload(false);
+  };
+
+  const handleUnsubmit = (id: string) => {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการส่งเอกสารนี้?')) {
+      setMyDocs(myDocs.filter(d => d.id !== id));
+    }
+  };
+
+  const StatusBadge = ({ status }: { status: string }) => {
+    if (status === 'approved') return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">อนุมัติแล้ว</span>;
+    if (status === 'pending') return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">รอตรวจ</span>;
+    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">แก้ไข</span>;
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">เอกสารของฉัน</h1>
           <p className="text-gray-500">My Documents</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+        <button 
+          onClick={() => setShowUpload(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+        >
           <Upload className="w-4 h-4" />
           <span>อัปโหลดเอกสาร</span>
         </button>
       </div>
+
+      {showUpload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">อัปโหลดเอกสารใหม่</h2>
+              <button onClick={() => setShowUpload(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleUpload} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">รอบการนำเสนอ</label>
+                <select 
+                  value={uploadData.round}
+                  onChange={e => setUploadData({...uploadData, round: e.target.value})}
+                  className="w-full border-gray-300 rounded-lg p-2.5 border focus:border-emerald-500 focus:ring-emerald-500"
+                >
+                  <option value="Proposal">Proposal</option>
+                  <option value="Progress">Progress</option>
+                  <option value="Pre-Final">Pre-Final</option>
+                  <option value="Final">Final</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ประเภทไฟล์</label>
+                <select 
+                  value={uploadData.type}
+                  onChange={e => setUploadData({...uploadData, type: e.target.value})}
+                  className="w-full border-gray-300 rounded-lg p-2.5 border focus:border-emerald-500 focus:ring-emerald-500"
+                >
+                  <option value="report">เอกสารรายงาน</option>
+                  <option value="slide">สไลด์นำเสนอ</option>
+                </select>
+                {uploadData.type === 'slide' && (
+                  <p className="mt-2 text-xs text-orange-600 flex items-start gap-1">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>คำเตือน: ต้องอัปโหลดสไลด์นำเสนอก่อนวันนำเสนอจริงอย่างน้อย 1 วัน</span>
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">เลือกไฟล์</label>
+                <input type="file" className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100" />
+              </div>
+              <div className="pt-4 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowUpload(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">ยกเลิก</button>
+                <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">อัปโหลด</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -37,6 +119,7 @@ const MyDocuments = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อไฟล์</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รอบนำเสนอ</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่ส่ง</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
@@ -44,38 +127,50 @@ const MyDocuments = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {myDocs.map((doc, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
+              {myDocs.map((doc) => (
+                <tr key={doc.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <FileText className="w-5 h-5 text-gray-400 mr-3" />
                       <div>
                         <div className="text-sm font-medium text-gray-900">{doc.name}</div>
-                        <div className="text-xs text-gray-500">ขนาด: 2.4 MB</div>
+                        <div className="text-xs text-gray-500">ขนาด: {doc.size}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {doc.type === 'proposal' ? 'รายงาน' : doc.type === 'progress_report' ? 'สไลด์นำเสนอ' : 'อื่นๆ'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                    {doc.round}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {doc.uploadDate || '01/10/2023'}
+                    {doc.type === 'report' ? 'เอกสารรายงาน' : 'สไลด์นำเสนอ'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {doc.uploadDate}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      ตรวจแล้ว
-                    </span>
+                    <StatusBadge status={doc.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-emerald-600 hover:text-emerald-900 p-1">
-                      <Download className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="text-blue-600 hover:text-blue-900 p-1 bg-blue-50 hover:bg-blue-100 rounded" title="ดาวน์โหลด">
+                        <Download className="w-4 h-4" />
+                      </button>
+                      {doc.status === 'pending' && (
+                        <button 
+                          onClick={() => handleUnsubmit(doc.id)}
+                          className="text-red-600 hover:text-red-900 p-1 bg-red-50 hover:bg-red-100 rounded" 
+                          title="ยกเลิกการส่ง"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
               {myDocs.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500 text-sm">
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500 text-sm">
                     ไม่พบเอกสาร
                   </td>
                 </tr>

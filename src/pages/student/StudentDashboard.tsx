@@ -25,24 +25,17 @@ const StudentDashboard = () => {
   const project = getStudentProject(studentId);
   
   const weeklyAvg = useMemo(() => calculateWeeklyAverage(weeklyScores), [weeklyScores]);
-  const trend = useMemo(() => analyzeTrend(weeklyScores), [weeklyScores]);
+  const trend = useMemo(() => analyzeTrend(weeklyScores.map(w => w.percentage)), [weeklyScores]);
   
   const chartData = useMemo(() => {
-    return {
-      labels: weeklyScores.map(w => `W${w.week}`),
-      datasets: [
-        {
-          label: 'คะแนน',
-          data: weeklyScores.map(w => w.score),
-          borderColor: '#059669',
-          backgroundColor: '#059669',
-        }
-      ]
-    };
+    return weeklyScores.map(w => ({
+      week: `W${w.week}`,
+      score: w.percentage
+    }));
   }, [weeklyScores]);
 
   const recentNotifications = notifications
-    .filter(n => n.targetRole === 'student' || n.targetRole === 'all')
+    .filter(n => n.targetRole === 'student')
     .slice(0, 3);
     
   const upcomingEvents = calendarEvents.slice(0, 3);
@@ -95,7 +88,7 @@ const StudentDashboard = () => {
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">คะแนนรายสัปดาห์</h3>
           <div className="h-80">
-            <LineChartComponent data={chartData} />
+            <LineChartComponent data={chartData} xKey="week" lines={[{ key: 'score', name: 'คะแนน', color: '#059669' }]} />
           </div>
         </div>
 

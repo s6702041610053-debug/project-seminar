@@ -1,117 +1,195 @@
-import React, { useState } from 'react';
-import { Search, Filter, Eye, Activity } from 'lucide-react';
-import { projects } from '../../data/mockData';
-import { useNavigate } from 'react-router-dom';
-
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  switch (status) {
-    case 'in_progress': return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">กำลังดำเนินการ</span>;
-    case 'completed': return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">เสร็จสิ้น</span>;
-    case 'on_hold': return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">ระงับชั่วคราว</span>;
-    default: return null;
-  }
-};
+import React, { useState, useMemo } from 'react';
+import { Search, ChevronLeft, ChevronRight, CheckCircle, Clock, AlertTriangle, Target } from 'lucide-react';
+import { projects, students } from '../../data/mockData';
+import { PROJECT_STEPS } from '../../types';
 
 const ProjectTracking: React.FC = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const summary = useMemo(() => {
+    const avgStep = Math.round(projects.reduce((sum, p) => sum + p.currentStep, 0) / projects.length * 10) / 10;
+    const reachedFinal = projects.filter(p => p.currentStep >= 14).length;
+    const needsFollowUp = projects.filter(p => p.currentStep <= 6).length;
+    const completionRate = Math.round((projects.filter(p => p.status === 'completed').length / projects.length) * 100);
+    return { avgStep, reachedFinal, needsFollowUp, completionRate };
+  }, []);
+
+  const filteredProjects = useMemo(() => {
+    if (!searchTerm) return projects;
+    const lower = searchTerm.toLowerCase();
+    return projects.filter(p =>
+      p.title.toLowerCase().includes(lower) ||
+      p.studentName.toLowerCase().includes(lower)
+    );
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const currentData = filteredProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="p-6 max-w-7xl mx-auto font-sans space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#063B78]">ติดตามความก้าวหน้าโครงงาน</h1>
-        <p className="text-gray-500 mt-1">อัปเดตสถานะและความคืบหน้าของโครงงานที่ดูแล</p>
+        <h1 className="text-2xl font-bold text-[#063B78]">การติดตามความก้าวหน้า</h1>
+        <p className="text-gray-500 mt-1">ติดตาม 14 ขั้นตอนการดำเนินโครงงาน</p>
       </div>
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { icon: Target, label: 'ขั้นตอนเฉลี่ย', value: `${summary.avgStep}/14`, color: 'bg-blue-600' },
+          { icon: CheckCircle, label: 'ถึงขั้นตอนสุดท้าย', value: summary.reachedFinal, color: 'bg-emerald-600' },
+          { icon: AlertTriangle, label: 'ต้องติดตาม (≤ Step 6)', value: summary.needsFollowUp, color: 'bg-amber-500' },
+          { icon: Clock, label: 'อัตราความสำเร็จ', value: `${summary.completionRate}%`, color: 'bg-indigo-600' },
+        ].map((card, idx) => (
+          <div key={idx} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+            <div className="flex items-center gap-3">
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${card.color}`}>
+                <card.icon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">{card.label}</p>
+                <p className="text-2xl font-bold text-gray-800">{card.value}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input 
-              type="text" 
-              placeholder="ค้นหาชื่อโครงงาน..." 
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#063B78]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="text-gray-400 w-5 h-5" />
-            <select 
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#063B78]"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">ทุกสถานะ</option>
-              <option value="in_progress">กำลังดำเนินการ</option>
-              <option value="completed">เสร็จสิ้น</option>
-              <option value="on_hold">ระงับชั่วคราว</option>
-            </select>
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="ค้นหาชื่อโครงงาน, ชื่อนักศึกษา..."
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#063B78]/30 focus:border-[#063B78] transition-all"
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+          />
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200">
-                <th className="p-4 font-medium">รหัสโครงงาน</th>
-                <th className="p-4 font-medium min-w-[250px]">ชื่อโครงงาน</th>
-                <th className="p-4 font-medium w-64">ความคืบหน้าโดยรวม</th>
-                <th className="p-4 font-medium text-center">สถานะ</th>
-                <th className="p-4 font-medium text-center">อัปเดตล่าสุด</th>
-                <th className="p-4 font-medium text-center">ดูรายละเอียด</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {filteredProjects.map((project) => (
-                <tr key={project.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="p-4 font-medium text-gray-900">{project.id}</td>
-                  <td className="p-4">
-                    <div className="font-medium text-gray-900 line-clamp-1">{project.title}</div>
-                    <div className="text-xs text-gray-500 line-clamp-1">{project.titleEn}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-500">Progress</span>
-                        <span className="font-medium">{project.progress || 0}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${(project.progress || 0) >= 80 ? 'bg-green-500' : (project.progress || 0) >= 40 ? 'bg-blue-500' : 'bg-orange-500'}`}
-                          style={{ width: `${project.progress || 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 text-center"><StatusBadge status={project.status} /></td>
-                  <td className="p-4 text-center text-gray-500 text-xs">{"2026-09-06".split('T')[0]}</td>
-                  <td className="p-4">
-                    <div className="flex justify-center">
-                      <button 
-                        onClick={() => navigate(`/instructor/projects/${project.id}`)}
-                        className="p-1.5 text-[#063B78] hover:bg-blue-50 rounded-lg transition-colors"
-                        title="ดูรายละเอียดการติดตาม"
-                      >
-                        <Activity className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Project Timeline Cards */}
+      <div className="space-y-4">
+        {currentData.map((project) => {
+          const step = project.currentStep;
+          const progressPercent = Math.round((step / 14) * 100);
+
+          return (
+            <div key={project.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+              {/* Project Info Header */}
+              <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h3 className="font-bold text-gray-900">{project.title}</h3>
+                  <p className="text-sm text-gray-500">{project.studentName} • {project.advisorName}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-600">
+                    Step {step}/14
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    progressPercent >= 90 ? 'bg-emerald-100 text-emerald-700' :
+                    progressPercent >= 50 ? 'bg-blue-100 text-blue-700' :
+                    'bg-amber-100 text-amber-700'
+                  }`}>
+                    {progressPercent}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Timeline Stepper */}
+              <div className="p-4 overflow-x-auto">
+                <div className="flex items-center min-w-[700px]">
+                  {PROJECT_STEPS.map((stepName, idx) => {
+                    const stepNum = idx + 1;
+                    const isCompleted = stepNum < step;
+                    const isCurrent = stepNum === step;
+                    const isPending = stepNum > step;
+
+                    return (
+                      <React.Fragment key={idx}>
+                        {/* Step Circle */}
+                        <div className="flex flex-col items-center relative group" style={{ minWidth: '40px' }}>
+                          <div
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all border-2 ${
+                              isCompleted
+                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                : isCurrent
+                                ? 'bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-200 animate-pulse'
+                                : 'bg-white border-gray-200 text-gray-400'
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : (
+                              stepNum
+                            )}
+                          </div>
+                          {/* Tooltip */}
+                          <div className="absolute top-full mt-1 hidden group-hover:block z-10">
+                            <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                              {stepNum}. {stepName}
+                            </div>
+                          </div>
+                        </div>
+                        {/* Connector Line */}
+                        {idx < PROJECT_STEPS.length - 1 && (
+                          <div className={`flex-1 h-0.5 mx-0.5 rounded ${
+                            stepNum < step ? 'bg-emerald-400' :
+                            stepNum === step ? 'bg-gradient-to-r from-blue-400 to-gray-200' :
+                            'bg-gray-200'
+                          }`} />
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Current Step Label */}
+              <div className="px-4 pb-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-500">ขั้นตอนปัจจุบัน:</span>
+                  <span className={`font-semibold ${step >= 14 ? 'text-emerald-600' : 'text-blue-600'}`}>
+                    {PROJECT_STEPS[step - 1] || 'สำเร็จ'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <span className="text-sm text-gray-500">
+            แสดง {(currentPage - 1) * itemsPerPage + 1} ถึง {Math.min(currentPage * itemsPerPage, filteredProjects.length)} จาก {filteredProjects.length} โครงงาน
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-sm font-medium text-gray-600 px-2">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

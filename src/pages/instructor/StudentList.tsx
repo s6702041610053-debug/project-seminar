@@ -33,8 +33,8 @@ const StudentList: React.FC = () => {
       ...student,
       projectTitle: project?.title || 'ไม่ระบุ',
       avgScore: 85, // Mock value
-      riskLevel: riskData.finalLevel,
-      riskTrend: riskData.trend
+      riskLevel: riskData?.finalLevel || 'low',
+      riskTrend: riskData?.trend || 'stable'
     };
   });
 
@@ -90,28 +90,32 @@ const StudentList: React.FC = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {filteredStudents.map((student, index) => (
-                <tr 
-                  key={student.id} 
-                  className="border-b border-gray-50 hover:bg-blue-50/50 cursor-pointer transition-colors"
-                  onClick={() => navigate(`/instructor/students/${student.id}`)}
-                >
-                  <td className="p-4 text-center text-gray-500">{index + 1}</td>
-                  <td className="p-4 font-medium text-gray-900">{student.studentId}</td>
-                  <td className="p-4">{student.name}</td>
-                  <td className="p-4"><span className="px-2 py-1 bg-gray-100 rounded text-xs">{student.group}</span></td>
-                  <td className="p-4 text-gray-600 line-clamp-1">{student.projectTitle}</td>
-                  <td className="p-4 text-center"><RiskBadge level={student.riskLevel} /></td>
-                  <td className="p-4 text-center text-lg"><TrendBadge trend={student.riskTrend} /></td>
-                  <td className="p-4">
-                    <div className="flex justify-center">
-                      <button className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filteredStudents.map((student, index) => {
+                const rawRiskData = getStudentRiskScore(student.id);
+                const riskData = rawRiskData || { finalLevel: 'low' };
+                return (
+                  <tr 
+                    key={student.id} 
+                    className="border-b border-gray-50 hover:bg-blue-50/50 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/instructor/students/${student.id}`)}
+                  >
+                    <td className="p-4 text-center text-gray-500">{index + 1}</td>
+                    <td className="p-4 font-medium text-gray-900">{student.studentId}</td>
+                    <td className="p-4">{student.name}</td>
+                    <td className="p-4"><span className="px-2 py-1 bg-gray-100 rounded text-xs">{student.group}</span></td>
+                    <td className="p-4 text-gray-600 line-clamp-1">{student.projectTitle}</td>
+                    <td className="p-4 text-center"><RiskBadge level={student.riskLevel} /></td>
+                    <td className="p-4 text-center text-lg"><TrendBadge trend={student.riskTrend} /></td>
+                    <td className="p-4">
+                      <div className="flex justify-center">
+                        <button className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

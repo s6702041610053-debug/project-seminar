@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, User, BookOpen, AlertTriangle, FileText, CheckCircle, 
-  MessageSquare, Calendar, Activity, BarChart2
+  ArrowLeft, User, AlertTriangle, FileText, CheckCircle, XCircle,
+  MessageSquare, Calendar, Activity, BarChart2, Download, Clock
 } from 'lucide-react';
-import { students, projects, instructors, getStudentRiskScore } from '../../data/mockData';
-import { getScoreLevel, analyzeTrend } from '../../utils/calculations';
+import { 
+  students, projects, instructors, getStudentRiskScore,
+  getStudentWeeklyScores, getStudentPresentations
+} from '../../data/mockData';
+import { getScoreLevel, getPresentationLevel } from '../../utils/calculations';
 
 const StudentDetail: React.FC = () => {
   const { studentId } = useParams();
@@ -13,11 +16,25 @@ const StudentDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   // If studentId is undefined, use mock
-  const id = studentId || '1'; 
+  const id = studentId || 's6501001'; 
   const student = students.find(s => s.id === id) || students[0];
   const project = projects.find(p => p.id === student.projectId);
   const advisor = instructors.find(i => i.id === project?.advisorId);
-  const riskData = getStudentRiskScore(id);
+  const rawRiskData = getStudentRiskScore(id);
+  const riskData = rawRiskData || { finalLevel: 'low', totalScore: 0, recommendation: '', breakdown: { weeklyScore: 0, presentationScore: 0, submissionScore: 0 }, appliedRules: [], trend: 'stable' };
+  const weeklyScores = getStudentWeeklyScores(id);
+  const presentations = getStudentPresentations(id);
+
+  // Mock Data for Tabs
+  const feedbacks = [
+    { id: 1, type: 'Weekly Report', date: '2024-10-01', text: 'ควรเพิ่มรายละเอียดในส่วนของการทดสอบระบบ', author: advisor?.name || 'อาจารย์ที่ปรึกษา' },
+    { id: 2, type: 'Presentation', date: '2024-09-15', text: 'สไลด์นำเสนอชัดเจนดี แต่ควรฝึกซ้อมการตอบคำถามเพิ่มเติม', author: 'กรรมการคุมสอบ' }
+  ];
+
+  const docs = [
+    { id: 1, name: 'Proposal_Report_v2.pdf', type: 'รายงาน Proposal', date: '2024-09-10', status: 'approved' },
+    { id: 2, name: 'Progress_Slides.pdf', type: 'สไลด์ Progress', date: '2024-10-06', status: 'pending' }
+  ];
 
   const tabs = [
     { id: 'overview', name: 'ภาพรวม', icon: <Activity className="w-4 h-4 mr-2" /> },
@@ -29,10 +46,10 @@ const StudentDetail: React.FC = () => {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto font-sans space-y-6">
+    <div className="p-6 max-w-7xl mx-auto font-sans space-y-6 animate-fadeIn">
       <button 
         onClick={() => navigate('/instructor/students')}
-        className="flex items-center text-sm text-gray-500 hover:text-[#063B78] transition-colors"
+        className="flex items-center text-sm text-gray-500 hover:text-blue-600 transition-colors"
       >
         <ArrowLeft className="w-4 h-4 mr-1" /> กลับไปหน้ารายชื่อนักศึกษา
       </button>
@@ -62,14 +79,14 @@ const StudentDetail: React.FC = () => {
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className={`px-4 py-2 rounded-lg border flex items-center gap-2 ${
-                riskData.finalLevel === 'High' ? 'bg-red-50 border-red-200 text-red-700' :
-                riskData.finalLevel === 'Medium' ? 'bg-orange-50 border-orange-200 text-orange-700' :
+                riskData.finalLevel === 'high' ? 'bg-red-50 border-red-200 text-red-700' :
+                riskData.finalLevel === 'medium' ? 'bg-orange-50 border-orange-200 text-orange-700' :
                 'bg-green-50 border-green-200 text-green-700'
               }`}>
                 <AlertTriangle className="w-5 h-5" />
                 <div className="flex flex-col">
                   <span className="text-xs font-medium opacity-80">Risk Level</span>
-                  <span className="font-bold">{riskData.finalLevel === 'High' ? 'เสี่ยงสูง' : riskData.finalLevel === 'Medium' ? 'เสี่ยงปานกลาง' : 'เสี่ยงต่ำ'} ({riskData.totalScore}%)</span>
+                  <span className="font-bold uppercase">{riskData.finalLevel} ({riskData.totalScore}%)</span>
                 </div>
               </div>
             </div>
@@ -78,14 +95,14 @@ const StudentDetail: React.FC = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex overflow-x-auto border-b border-gray-200 hide-scrollbar">
+      <div className="flex overflow-x-auto border-b border-gray-200 hide-scrollbar bg-white rounded-t-xl px-2 pt-2">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center whitespace-nowrap px-6 py-3 border-b-2 text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'border-[#063B78] text-[#063B78]'
+                ? 'border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-lg'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -95,49 +112,215 @@ const StudentDetail: React.FC = () => {
         ))}
       </div>
 
-      {/* Tab Content Placeholder */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[400px]">
+      {/* Tab Content */}
+      <div className="bg-white rounded-b-xl shadow-sm border border-gray-100 p-6 min-h-[400px]">
+        
         {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fadeIn">
             <h2 className="text-lg font-bold text-gray-800">ภาพรวมความก้าวหน้า</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                 <p className="text-sm text-gray-500">ความคืบหน้าโครงงาน</p>
-                 <p className="text-2xl font-bold text-blue-600 mt-1">{project?.overallProgress || 0}%</p>
+               <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                 <p className="text-sm text-blue-600 font-medium">ความคืบหน้าโครงงาน</p>
+                 <p className="text-3xl font-bold text-blue-700 mt-1">{project?.progress || 0}%</p>
                </div>
-               <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                 <p className="text-sm text-gray-500">ส่งเอกสารแล้ว</p>
-                 <p className="text-2xl font-bold text-emerald-600 mt-1">4 / 7</p>
+               <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100">
+                 <p className="text-sm text-emerald-600 font-medium">ส่งรายงาน Weekly</p>
+                 <p className="text-3xl font-bold text-emerald-700 mt-1">{weeklyScores.filter(w => w.submissionStatus !== 'not_submitted').length} / 14</p>
                </div>
-               <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                 <p className="text-sm text-gray-500">เข้าพบที่ปรึกษา</p>
-                 <p className="text-2xl font-bold text-purple-600 mt-1">8 ครั้ง</p>
+               <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
+                 <p className="text-sm text-purple-600 font-medium">คะแนนเฉลี่ย Weekly</p>
+                 <p className="text-3xl font-bold text-purple-700 mt-1">
+                   {weeklyScores.length > 0 ? (weeklyScores.reduce((s,a) => s+a.percentage,0)/weeklyScores.length).toFixed(1) : 0}%
+                 </p>
                </div>
             </div>
             <div className="mt-6 border-t border-gray-100 pt-6">
-               <h3 className="text-md font-medium text-gray-800 mb-4">ไทม์ไลน์ล่าสุด</h3>
-               <div className="space-y-4">
-                 {[1,2,3].map(i => (
-                   <div key={i} className="flex gap-4">
-                     <div className="flex flex-col items-center">
-                       <div className="w-3 h-3 bg-blue-500 rounded-full mt-1.5"></div>
-                       {i !== 3 && <div className="w-px h-full bg-gray-200 my-1"></div>}
-                     </div>
-                     <div>
-                       <p className="text-sm font-medium text-gray-800">ส่งรายงานความก้าวหน้าครั้งที่ {4-i}</p>
-                       <p className="text-xs text-gray-500">เมื่อ {i} สัปดาห์ที่แล้ว</p>
-                     </div>
-                   </div>
-                 ))}
+               <h3 className="text-md font-bold text-gray-800 mb-4">สถานะปัจจุบัน</h3>
+               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                 <p className="text-gray-700">กำลังอยู่ในขั้นตอน: <span className="font-bold text-blue-600">ดำเนินโครงงาน (In Progress)</span></p>
                </div>
             </div>
           </div>
         )}
-        {activeTab !== 'overview' && (
-          <div className="flex items-center justify-center h-64 text-gray-500">
-            เนื้อหาหน้า {tabs.find(t => t.id === activeTab)?.name} (Mock)
+
+        {activeTab === 'weekly' && (
+          <div className="animate-fadeIn">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">ประวัติการส่งงานรายสัปดาห์</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-200">
+                    <th className="p-3 font-medium">สัปดาห์ที่</th>
+                    <th className="p-3 font-medium">คะแนน (%)</th>
+                    <th className="p-3 font-medium">สถานะการส่ง</th>
+                    <th className="p-3 font-medium">ความคืบหน้า</th>
+                    <th className="p-3 font-medium">คุณภาพงาน</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {weeklyScores.map(score => {
+                    const statusColor = score.submissionStatus === 'on_time' ? 'text-green-600 bg-green-50' : 
+                                      score.submissionStatus === 'late' ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50';
+                    const statusText = score.submissionStatus === 'on_time' ? 'ตรงเวลา' : 
+                                      score.submissionStatus === 'late' ? 'ล่าช้า' : 'ยังไม่ส่ง';
+                    return (
+                      <tr key={score.week} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="p-3 text-sm font-medium">สัปดาห์ที่ {score.week}</td>
+                        <td className="p-3 text-sm font-bold text-gray-800">{score.percentage}%</td>
+                        <td className="p-3 text-sm">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}>{statusText}</span>
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">{score.progress}/5</td>
+                        <td className="p-3 text-sm text-gray-600">{score.quality}/5</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
+
+        {activeTab === 'presentation' && (
+          <div className="animate-fadeIn">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">ผลการประเมินการนำเสนอ</h2>
+            {presentations.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {presentations.map(p => {
+                  const pLevelInfo = getPresentationLevel(p.percentage);
+                  return (
+                    <div key={p.id} className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-lg">{p.type}</h3>
+                          <p className="text-sm text-gray-500">{p.assessedDate}</p>
+                        </div>
+                        <div className={`px-3 py-1 rounded-full text-sm font-bold ${pLevelInfo.bgColor} ${pLevelInfo.color}`}>
+                          {p.percentage}% ({pLevelInfo.label})
+                        </div>
+                      </div>
+                      <div className="space-y-2 mt-4 bg-gray-50 p-3 rounded-lg text-sm">
+                        <div className="flex justify-between"><span className="text-gray-600">เนื้อหา (Content)</span><span className="font-medium">{p.rubric.content}/5</span></div>
+                        <div className="flex justify-between"><span className="text-gray-600">การนำเสนอ (Presentation)</span><span className="font-medium">{p.rubric.presentation}/5</span></div>
+                        <div className="flex justify-between"><span className="text-gray-600">การตอบคำถาม (Q&A)</span><span className="font-medium">{p.rubric.qa}/5</span></div>
+                      </div>
+                      {p.feedback && (
+                        <div className="mt-4 p-3 bg-blue-50 text-blue-800 text-sm rounded-lg border border-blue-100">
+                          <span className="font-bold">ข้อเสนอแนะ:</span> {p.feedback}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">ยังไม่มีประวัติการนำเสนอ</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'risk' && (
+          <div className="animate-fadeIn">
+            <h2 className="text-lg font-bold text-gray-800 mb-6">วิเคราะห์ความเสี่ยง (Risk Score)</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className={`w-32 h-32 rounded-full flex items-center justify-center mb-4 border-8 ${
+                  riskData.finalLevel === 'high' ? 'border-red-500 text-red-600 bg-red-50' :
+                  riskData.finalLevel === 'medium' ? 'border-orange-500 text-orange-600 bg-orange-50' :
+                  'border-green-500 text-green-600 bg-green-50'
+                }`}>
+                  <span className="text-4xl font-bold">{riskData.totalScore}%</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">ระดับความเสี่ยง: <span className="uppercase">{riskData.finalLevel}</span></h3>
+                <p className="text-center text-gray-600 mt-2">{riskData.recommendation}</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800 mb-4">องค์ประกอบความเสี่ยง</h3>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1"><span className="text-gray-600">คะแนนรายสัปดาห์</span><span className="font-medium">{riskData.breakdown.weeklyScore}%</span></div>
+                    <div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-blue-500 h-2 rounded-full" style={{width: `${riskData.breakdown.weeklyScore}%`}}></div></div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1"><span className="text-gray-600">คะแนนการนำเสนอ</span><span className="font-medium">{riskData.breakdown.presentationScore}%</span></div>
+                    <div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-purple-500 h-2 rounded-full" style={{width: `${riskData.breakdown.presentationScore}%`}}></div></div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1"><span className="text-gray-600">การส่งงาน</span><span className="font-medium">{riskData.breakdown.submissionScore}%</span></div>
+                    <div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-emerald-500 h-2 rounded-full" style={{width: `${riskData.breakdown.submissionScore}%`}}></div></div>
+                  </div>
+                </div>
+                {riskData.appliedRules.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-bold text-gray-800 mb-2">เงื่อนไขความเสี่ยงที่พบ</h3>
+                    <ul className="list-disc pl-5 text-sm text-red-600 space-y-1">
+                      {riskData.appliedRules.map((rule, idx) => <li key={idx}>{rule}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'docs' && (
+          <div className="animate-fadeIn">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">เอกสารที่ส่งแล้ว</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-200">
+                    <th className="p-3 font-medium">ชื่อไฟล์</th>
+                    <th className="p-3 font-medium">ประเภท</th>
+                    <th className="p-3 font-medium">วันที่ส่ง</th>
+                    <th className="p-3 font-medium">สถานะ</th>
+                    <th className="p-3 font-medium text-center">ดาวน์โหลด</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {docs.map(doc => (
+                    <tr key={doc.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="p-3 text-sm font-medium text-blue-600">{doc.name}</td>
+                      <td className="p-3 text-sm text-gray-600">{doc.type}</td>
+                      <td className="p-3 text-sm text-gray-600">{doc.date}</td>
+                      <td className="p-3 text-sm">
+                        {doc.status === 'approved' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"><CheckCircle className="w-3 h-3"/> อนุมัติแล้ว</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium"><Clock className="w-3 h-3"/> รอตรวจ</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-center">
+                        <button className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Download className="w-4 h-4"/></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'feedback' && (
+          <div className="animate-fadeIn">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">ประวัติ Feedback</h2>
+            <div className="space-y-4">
+              {feedbacks.map(fb => (
+                <div key={fb.id} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">{fb.type}</span>
+                      <span className="text-sm text-gray-500 font-medium">{fb.author}</span>
+                    </div>
+                    <span className="text-xs text-gray-400">{fb.date}</span>
+                  </div>
+                  <p className="text-gray-800 text-sm leading-relaxed mt-2">{fb.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
