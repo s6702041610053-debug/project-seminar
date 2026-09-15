@@ -1,14 +1,44 @@
 import React, { useState } from 'react';
-import { Search, Plus, Edit, Trash2 } from 'lucide-react';
-import { instructors, projects } from '../../data/mockData';
+import { Search, Plus, Edit, Trash2, X } from 'lucide-react';
+import { instructors as mockInstructors, projects } from '../../data/mockData';
+import { Instructor } from '../../types';
 
 const InstructorManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [instructors, setInstructors] = useState<Instructor[]>(mockInstructors);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newInstructor, setNewInstructor] = useState<Partial<Instructor>>({
+    instructorId: '',
+    name: '',
+    email: '',
+    phone: '',
+    department: 'วิศวกรรมคอมพิวเตอร์',
+    position: 'อาจารย์'
+  });
 
   const filteredInstructors = instructors.filter(instructor => 
     instructor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     instructor.instructorId.includes(searchTerm)
   );
+
+  const handleAddInstructor = () => {
+    if (!newInstructor.instructorId || !newInstructor.name) return;
+
+    const instructorToAdd: Instructor = {
+      id: `i${newInstructor.instructorId}`,
+      instructorId: newInstructor.instructorId,
+      name: newInstructor.name,
+      email: newInstructor.email || `${newInstructor.instructorId}@kmutnb.ac.th`,
+      phone: newInstructor.phone,
+      department: newInstructor.department || 'วิศวกรรมคอมพิวเตอร์',
+      position: newInstructor.position || 'อาจารย์'
+    };
+
+    mockInstructors.push(instructorToAdd);
+    setInstructors([...mockInstructors]);
+    setIsAddModalOpen(false);
+    setNewInstructor({ instructorId: '', name: '', email: '', phone: '', department: 'วิศวกรรมคอมพิวเตอร์', position: 'อาจารย์' });
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto font-sans space-y-6">
@@ -17,7 +47,10 @@ const InstructorManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-[#063B78]">จัดการอาจารย์</h1>
           <p className="text-gray-500 mt-1">จัดการข้อมูลอาจารย์ที่ปรึกษาและผู้สอน</p>
         </div>
-        <button className="flex items-center px-4 py-2 bg-[#063B78] text-white rounded-lg hover:bg-[#032A57] transition-colors">
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center px-4 py-2 bg-[#063B78] text-white rounded-lg hover:bg-[#032A57] transition-colors"
+        >
           <Plus className="w-5 h-5 mr-2" />
           เพิ่มอาจารย์
         </button>
@@ -59,7 +92,7 @@ const InstructorManagement: React.FC = () => {
                     <td className="p-4 text-center text-gray-500">{index + 1}</td>
                     <td className="p-4 font-medium text-gray-900">{instructor.instructorId}</td>
                     <td className="p-4">{instructor.name}</td>
-                    <td className="p-4 text-gray-600">อาจารย์ประจำ</td>
+                    <td className="p-4 text-gray-600">{instructor.position || 'อาจารย์ประจำ'}</td>
                     <td className="p-4 text-gray-500">{instructor.email}</td>
                     <td className="p-4 text-gray-500">{instructor.phone || '-'}</td>
                     <td className="p-4 text-center">
@@ -84,6 +117,82 @@ const InstructorManagement: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-[#063B78]">เพิ่มอาจารย์ใหม่</h2>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">รหัสอาจารย์</label>
+                <input 
+                  type="text" 
+                  value={newInstructor.instructorId}
+                  onChange={e => setNewInstructor({...newInstructor, instructorId: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อ-สกุล</label>
+                <input 
+                  type="text" 
+                  value={newInstructor.name}
+                  onChange={e => setNewInstructor({...newInstructor, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ตำแหน่ง</label>
+                <input 
+                  type="text" 
+                  value={newInstructor.position}
+                  onChange={e => setNewInstructor({...newInstructor, position: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">อีเมล</label>
+                <input 
+                  type="email" 
+                  value={newInstructor.email}
+                  onChange={e => setNewInstructor({...newInstructor, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">โทรศัพท์</label>
+                <input 
+                  type="text" 
+                  value={newInstructor.phone}
+                  onChange={e => setNewInstructor({...newInstructor, phone: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button 
+                onClick={() => setIsAddModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                ยกเลิก
+              </button>
+              <button 
+                onClick={handleAddInstructor}
+                className="px-4 py-2 bg-[#063B78] text-white rounded-md hover:bg-[#032A57]"
+              >
+                บันทึก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -17,14 +17,10 @@ interface SidebarProps {
 const instructorItems = [
   { path: '/instructor', label: 'ภาพรวม Dashboard', icon: Home },
   { path: '/instructor/projects', label: 'โครงงานนักศึกษา', icon: BookOpen },
-  { path: '/instructor/tracking', label: 'ติดตาม 14 ขั้นตอน', icon: Activity },
   { path: '/instructor/students', label: 'นักศึกษาทั้งหมด', icon: Users },
-  { path: '/instructor/weekly-progress', label: 'Weekly Progress', icon: Calendar },
   { path: '/instructor/presentations', label: 'Presentation Assessment', icon: Presentation },
   { path: '/instructor/analytics', label: 'Learning Analytics', icon: BarChart2 },
-  { path: '/instructor/risk-score', label: 'Risk Score', icon: ShieldAlert },
   { path: '/instructor/notifications', label: 'การแจ้งเตือน', icon: Bell },
-  { path: '/instructor/reports', label: 'รายงานและสถิติ', icon: FileText },
   { path: '/instructor/documents', label: 'จัดการเอกสาร', icon: Database },
   { path: '/instructor/settings', label: 'ตั้งค่า', icon: Settings },
 ];
@@ -34,7 +30,6 @@ const studentItems = [
   { path: '/student/my-project', label: 'โครงงานของฉัน', icon: BookOpen },
   { path: '/student/weekly-progress', label: 'ความก้าวหน้ารายสัปดาห์', icon: Calendar },
   { path: '/student/presentations', label: 'การนำเสนอ', icon: Presentation },
-  { path: '/student/risk-score', label: 'Risk Score ของฉัน', icon: ShieldAlert },
   { path: '/student/documents', label: 'เอกสาร', icon: FileText },
   { path: '/student/feedback', label: 'Feedback จากอาจารย์', icon: CheckSquare },
   { path: '/student/calendar', label: 'ปฏิทินงาน', icon: Calendar },

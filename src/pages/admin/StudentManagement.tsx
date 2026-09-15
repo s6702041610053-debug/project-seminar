@@ -1,14 +1,42 @@
 import React, { useState } from 'react';
-import { Search, Plus, Edit, Trash2, Upload } from 'lucide-react';
-import { students, projects } from '../../data/mockData';
+import { Search, Plus, Edit, Trash2, Upload, X } from 'lucide-react';
+import { students as mockStudents, projects } from '../../data/mockData';
+import { Student } from '../../types';
 
 const StudentManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [students, setStudents] = useState<Student[]>(mockStudents);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newStudent, setNewStudent] = useState<Partial<Student>>({
+    studentId: '',
+    name: '',
+    email: '',
+    group: 'กลุ่ม A',
+    year: 4
+  });
 
   const filteredStudents = students.filter(student => 
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     student.studentId.includes(searchTerm)
   );
+
+  const handleAddStudent = () => {
+    if (!newStudent.studentId || !newStudent.name) return;
+
+    const studentToAdd: Student = {
+      id: `s${newStudent.studentId}`,
+      studentId: newStudent.studentId,
+      name: newStudent.name,
+      email: newStudent.email || `${newStudent.studentId}@kmutnb.ac.th`,
+      group: newStudent.group || 'กลุ่ม A',
+      year: newStudent.year || 4
+    };
+
+    mockStudents.push(studentToAdd);
+    setStudents([...mockStudents]);
+    setIsAddModalOpen(false);
+    setNewStudent({ studentId: '', name: '', email: '', group: 'กลุ่ม A', year: 4 });
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto font-sans space-y-6">
@@ -22,7 +50,10 @@ const StudentManagement: React.FC = () => {
             <Upload className="w-5 h-5 mr-2" />
             นำเข้า (Excel)
           </button>
-          <button className="flex items-center px-4 py-2 bg-[#063B78] text-white rounded-lg hover:bg-[#032A57] transition-colors">
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center px-4 py-2 bg-[#063B78] text-white rounded-lg hover:bg-[#032A57] transition-colors"
+          >
             <Plus className="w-5 h-5 mr-2" />
             เพิ่มนักศึกษา
           </button>
@@ -105,6 +136,76 @@ const StudentManagement: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-[#063B78]">เพิ่มนักศึกษาใหม่</h2>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">รหัสนักศึกษา</label>
+                <input 
+                  type="text" 
+                  value={newStudent.studentId}
+                  onChange={e => setNewStudent({...newStudent, studentId: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อ-สกุล</label>
+                <input 
+                  type="text" 
+                  value={newStudent.name}
+                  onChange={e => setNewStudent({...newStudent, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">อีเมล</label>
+                <input 
+                  type="email" 
+                  value={newStudent.email}
+                  onChange={e => setNewStudent({...newStudent, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">กลุ่ม</label>
+                <select 
+                  value={newStudent.group}
+                  onChange={e => setNewStudent({...newStudent, group: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#063B78]"
+                >
+                  <option value="กลุ่ม A">กลุ่ม A</option>
+                  <option value="กลุ่ม B">กลุ่ม B</option>
+                  <option value="กลุ่ม C">กลุ่ม C</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button 
+                onClick={() => setIsAddModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                ยกเลิก
+              </button>
+              <button 
+                onClick={handleAddStudent}
+                className="px-4 py-2 bg-[#063B78] text-white rounded-md hover:bg-[#032A57]"
+              >
+                บันทึก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
